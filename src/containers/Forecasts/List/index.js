@@ -12,6 +12,7 @@ import {
     DropdownButton,
     Dropdown,
 } from 'react-bootstrap';
+import moment from 'moment';
 import { parseQueryStringToJson } from "../../../helpers";
 import ForecastCreate from "../Create";
 
@@ -21,37 +22,58 @@ class ForecastList extends Component {
         const queryString = parseQueryStringToJson(props.location.search);
         this.state = {
             page: queryString.page || 1,
-            perPage: queryString.per_page || 10
+            perPage: queryString.per_page || 10,
+            forecasts: {
+                data: [],
+            },
         };
+        this.searchForecasts = this.searchForecasts.bind(this);
         this.handlePerPage = this.handlePerPage.bind(this);
         this.handlePage = this.handlePage.bind(this);
         this.handlePaginatePrev = this.handlePaginatePrev.bind(this);
         this.handlePaginateNext = this.handlePaginateNext.bind(this);
-
-        console.log('testing ForecastList');
     }
 
-    handlePerPage(value) {
-        this.setState({ perPage: value }, () => { console.log(this.state);});
+    handlePerPage(value, search = true) {
+        this.setState({ perPage: value }, () => {
+            if (search) {
+                this.searchForecasts();
+            }
+        });
     }
 
     handlePage(event) {
-        this.setState({ page: parseInt(event.target.value, 10) }, () => { console.log(this.state);});
+        this.setState({ page: parseInt(event.target.value, 10) });
     }
 
     handlePaginatePrev(event) {
         if (this.state.page > 1) {
-            this.setState({ page: this.state.page - 1 }, () => { console.log(this.state); });
+            this.setState({ page: parseInt(this.state.page, 10) - 1 }, () => { this.searchForecasts(); });
         }
     }
 
     handlePaginateNext(event) {
-        this.setState({ page: this.state.page + 1 }, () => { console.log(this.state);});
+        const nextPage = parseInt(this.state.page, 10) + 1;
+        if (nextPage <= this.state.forecasts.last_page) {
+            this.setState({ page: nextPage }, () => { this.searchForecasts(); });
+        }
     }
 
     handlePaginate(event) {
-        console.log(this.state);
+        this.searchForecasts();
         event.preventDefault();
+    }
+
+    async componentDidMount() {
+        await this.searchForecasts();
+    }
+
+    async searchForecasts() {
+        const paginationQuery = `page=${this.state.page}&per_page=${this.state.perPage}`;
+        const url = `http://localhost/api/v1/forecasts?${paginationQuery}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        this.setState({ forecasts: data });
     }
 
     render() {
@@ -60,6 +82,7 @@ class ForecastList extends Component {
                 <ForecastCreate
                     ref={ref => (this.child = ref)}
                     show={false}
+                    closeCallback={this.searchForecasts}
                 />
                 <Container>
                     <Row>
@@ -91,30 +114,18 @@ class ForecastList extends Component {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>forecast1</td>
-                                        <td>1,000</td>
-                                        <td>3.00%</td>
-                                        <td>12</td>
-                                        <td>12/13/2020 18:21</td>
-                                        <td><Button variant="primary" as={NavLink} to="forecasts/1">View</Button></td>
-                                    </tr>
-                                    <tr>
-                                        <td>forecast2</td>
-                                        <td>1,000</td>
-                                        <td>64.50%</td>
-                                        <td>5</td>
-                                        <td>12/16/2020 13:50</td>
-                                        <td><Button variant="primary" as={NavLink} to="forecasts/2">View</Button></td>
-                                    </tr>
-                                    <tr>
-                                        <td>forecast3</td>
-                                        <td>10,000</td>
-                                        <td>15.00%</td>
-                                        <td>48</td>
-                                        <td>12/16/2020 15:58</td>
-                                        <td><Button variant="primary" as={NavLink} to="forecasts/3">View</Button></td>
-                                    </tr>
+                                    {
+                                        this.state.forecasts.data.map((forecast) => {
+                                            return <tr>
+                                                <td>{forecast.name}</td>
+                                                <td>{new Intl.NumberFormat().format(forecast.studies_per_day)}</td>
+                                                <td>{forecast.growth_per_month * 100}%</td>
+                                                <td>{forecast.number_of_months}</td>
+                                                <td>{moment(forecast.created_at).format('MM/DD/YYYY HH:mm')}</td>
+                                                <td><Button variant="primary" as={NavLink} to={`forecasts/${forecast.id}`}>View</Button></td>
+                                            </tr>
+                                        })
+                                    }
                                 </tbody>
                             </Table>
                         </Col>
@@ -140,7 +151,7 @@ class ForecastList extends Component {
                                         aria-label="Rows per page"
                                         aria-describedby="basic-addon1"
                                         defaultValue={this.state.perPage}
-                                        onChange={(e) => { this.handlePerPage(parseInt(e.target.value, 10));}}
+                                        onChange={(e) => { this.handlePerPage(parseInt(e.target.value, 10), false);}}
                                     />
                                 </InputGroup>
                             </Form>

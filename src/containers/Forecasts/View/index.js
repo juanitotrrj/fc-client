@@ -12,6 +12,7 @@ import {
     DropdownButton,
     Dropdown,
 } from 'react-bootstrap';
+import moment from 'moment';
 import { parseQueryStringToJson } from "../../../helpers";
 
 class ForecastView extends Component {
@@ -21,32 +22,57 @@ class ForecastView extends Component {
         this.state = {
             id: parseInt(props.match.params.id, 10),
             page: queryString.page || 1,
-            perPage: queryString.per_page || 10
+            perPage: queryString.per_page || 10,
+            costs: {
+                data: [],
+            },
         };
         this.handlePerPage = this.handlePerPage.bind(this);
         this.handlePage = this.handlePage.bind(this);
         this.handlePaginatePrev = this.handlePaginatePrev.bind(this);
         this.handlePaginateNext = this.handlePaginateNext.bind(this);
-
-        console.log('testing ForecastView id: ' + this.state.id);
     }
 
-    handlePerPage(value) {
-        this.setState({ perPage: value }, () => { console.log(this.state); });
+    handlePerPage(value, search = true) {
+        this.setState({ perPage: value }, () => {
+            if (search) {
+                this.viewForecast();
+            }
+        });
     }
 
     handlePage(event) {
-        this.setState({ page: parseInt(event.target.value, 10) }, () => { console.log(this.state); });
+        this.setState({ page: parseInt(event.target.value, 10) });
     }
 
     handlePaginatePrev(event) {
         if (this.state.page > 1) {
-            this.setState({ page: this.state.page - 1 }, () => { console.log(this.state); });
+            this.setState({ page: parseInt(this.state.page, 10) - 1 }, () => { this.viewForecast(); });
         }
     }
 
     handlePaginateNext(event) {
-        this.setState({ page: this.state.page + 1 }, () => { console.log(this.state); });
+        const nextPage = parseInt(this.state.page, 10) + 1;
+        if (nextPage <= this.state.costs.last_page) {
+            this.setState({ page: nextPage }, () => { this.viewForecast(); });
+        }
+    }
+
+    handlePaginate(event) {
+        this.viewForecast();
+        event.preventDefault();
+    }
+
+    async componentDidMount() {
+        await this.viewForecast();
+    }
+
+    async viewForecast() {
+        const paginationQuery = `page=${this.state.page}&per_page=${this.state.perPage}`;
+        const url = `http://localhost/api/v1/forecasts/${this.state.id}/costs?${paginationQuery}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        this.setState({ costs: data });
     }
 
     render() {
@@ -81,34 +107,17 @@ class ForecastView extends Component {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>December</td>
-                                        <td>2020</td>
-                                        <td>31,000</td>
-                                        <td>94.77</td>
-                                        <td>12/13/2020 18:21</td>
-                                    </tr>
-                                    <tr>
-                                        <td>January</td>
-                                        <td>2021</td>
-                                        <td>31,930</td>
-                                        <td>97.62</td>
-                                        <td>12/13/2020 18:21</td>
-                                    </tr>
-                                    <tr>
-                                        <td>February</td>
-                                        <td>2021</td>
-                                        <td>32,887</td>
-                                        <td>93.99</td>
-                                        <td>12/13/2020 18:21</td>
-                                    </tr>
-                                    <tr>
-                                        <td>March</td>
-                                        <td>2021</td>
-                                        <td>33,873</td>
-                                        <td>103.56</td>
-                                        <td>12/13/2020 18:21</td>
-                                    </tr>
+                                    {
+                                        this.state.costs.data.map((cost) => {
+                                            return <tr>
+                                                <td>{moment(`2021-${cost.month}-01`).format('MMMM')}</td>
+                                                <td>{cost.year}</td>
+                                                <td>{new Intl.NumberFormat().format(cost.total_studies)}</td>
+                                                <td>{new Intl.NumberFormat().format(cost.total_cost)}</td>
+                                                <td>{moment(cost.created_at).format('MM/DD/YYYY HH:mm')}</td>
+                                            </tr>
+                                        })
+                                    }
                                 </tbody>
                             </Table>
                         </Col>
@@ -134,7 +143,7 @@ class ForecastView extends Component {
                                         aria-label="Rows per page"
                                         aria-describedby="basic-addon1"
                                         defaultValue={this.state.perPage}
-                                        onChange={(e) => { this.handlePerPage(parseInt(e.target.value, 10)); }}
+                                        onChange={(e) => { this.handlePerPage(parseInt(e.target.value, 10), false); }}
                                     />
                                 </InputGroup>
                             </Form>
