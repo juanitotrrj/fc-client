@@ -122,7 +122,7 @@ class ForecastView extends Component {
                                                 <td>{moment(`2021-${cost.month}-01`).format('MMMM')}</td>
                                                 <td>{cost.year}</td>
                                                 <td>{new Intl.NumberFormat().format(cost.total_studies)}</td>
-                                                <td>{new Intl.NumberFormat().format(cost.total_cost)}</td>
+                                                <td>{`$ ${new Intl.NumberFormat().format(cost.total_cost)}`}</td>
                                                 <td>{moment(cost.created_at).format('MM/DD/YYYY HH:mm')}</td>
                                             </tr>
                                         })

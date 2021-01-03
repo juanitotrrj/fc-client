@@ -35,7 +35,7 @@ class ForecastUpdate extends Component {
             body: JSON.stringify({
                 name: this.state.forecastName,
                 studies_per_day: parseInt(this.state.numberOfStudiesPerDay, 10),
-                growth_per_month: parseFloat(this.state.percentGrowthOfStudiesPerMonth) / 100,
+                growth_per_month: parseFloat(this.state.percentGrowthOfStudiesPerMonth),
                 number_of_months: parseInt(this.state.numberOfMonthsToForecast),
             })
         })
@@ -67,8 +67,8 @@ class ForecastUpdate extends Component {
         });
     }
 
-    handleFormChange(event) {
-        this.setState({ [event.target.id]: event.target.value });
+    handleFormChange(event, convertPercent = false) {
+        this.setState({ [event.target.id]: convertPercent ? event.target.value / 100 : event.target.value });
     }
 
     render() {
@@ -100,7 +100,7 @@ class ForecastUpdate extends Component {
                         <Form.Group controlId="percentGrowthOfStudiesPerMonth">
                             <Form.Label>Percent Growth of Studies per Month</Form.Label>
                             <InputGroup className="mb-3">
-                                <Form.Control type="text" placeholder="Percent" onChange={this.handleFormChange} defaultValue={this.state.percentGrowthOfStudiesPerMonth * 100} />
+                                <Form.Control type="text" placeholder="Percent" onChange={(e) => this.handleFormChange(e, true) } defaultValue={this.state.percentGrowthOfStudiesPerMonth * 100} />
                                 <InputGroup.Append>
                                     <InputGroup.Text id="basic-addon2">%</InputGroup.Text>
                                 </InputGroup.Append>
