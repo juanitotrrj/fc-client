@@ -15,12 +15,14 @@ import {
 import moment from 'moment';
 import { parseQueryStringToJson } from "../../../helpers";
 import ForecastCreate from "../Create";
+import ForecastUpdate from "../Update";
 
 class ForecastList extends Component {
     constructor(props) {
         super(props);
         const queryString = parseQueryStringToJson(props.location.search);
         this.state = {
+            forecastIdToEdit: 0,
             page: queryString.page || 1,
             perPage: queryString.per_page || 10,
             forecasts: {
@@ -64,6 +66,31 @@ class ForecastList extends Component {
         event.preventDefault();
     }
 
+    handleShowUpdateModal(forecastId) {
+        this.updateChild.setState({ id: forecastId }, () => {
+            this.updateChild.getForecast(() => this.updateChild.setState({ show: true }));
+        });
+    }
+
+    async handleDeleteForecast(forecastId) {
+        await this.deleteForecast(forecastId);
+    }
+
+    async deleteForecast(forecastId) {
+        const url = `http://localhost/api/v1/forecasts/${forecastId}`;
+        await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json; charset=UTF-8',
+            }
+        })
+        .then(() => this.searchForecasts())
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
     async componentDidMount() {
         await this.searchForecasts();
     }
@@ -79,8 +106,13 @@ class ForecastList extends Component {
     render() {
         return (
             <div>
+                <ForecastUpdate
+                    ref={ref => (this.updateChild = ref)}
+                    show={false}
+                    closeCallback={this.searchForecasts}
+                />
                 <ForecastCreate
-                    ref={ref => (this.child = ref)}
+                    ref={ref => (this.createChild = ref)}
                     show={false}
                     closeCallback={this.searchForecasts}
                 />
@@ -95,13 +127,13 @@ class ForecastList extends Component {
                     <Row>
                         <Col md={{ span: 8, offset: 2 }}>
                             <center>
-                                <Button variant="primary" onClick={() => this.child.setState({ show: true })}>Create Forecast</Button>
+                                <Button variant="primary" onClick={() => this.createChild.setState({ show: true })}>Create Forecast</Button>
                             </center>
                             <br/>
                         </Col>
                     </Row>
                     <Row>
-                        <Col md={{ span: 10, offset: 1 }}>
+                        <Col md={{ span: 12 }}>
                             <Table bordered hover>
                                 <thead>
                                     <tr>
@@ -122,7 +154,11 @@ class ForecastList extends Component {
                                                 <td>{forecast.growth_per_month * 100}%</td>
                                                 <td>{forecast.number_of_months}</td>
                                                 <td>{moment(forecast.created_at).format('MM/DD/YYYY HH:mm')}</td>
-                                                <td><Button variant="primary" as={NavLink} to={`forecasts/${forecast.id}`}>View</Button></td>
+                                                <td>
+                                                    <Button size="sm" variant="primary" as={NavLink} to={`forecasts/${forecast.id}`}>View</Button>
+                                                    <Button size="sm" variant="warning" onClick={() => this.handleShowUpdateModal(forecast.id)}>Edit</Button>
+                                                    <Button size="sm" variant="danger" onClick={() => this.handleDeleteForecast(forecast.id)}>Delete</Button>
+                                                </td>
                                             </tr>
                                         })
                                     }
@@ -152,6 +188,7 @@ class ForecastList extends Component {
                                         aria-describedby="basic-addon1"
                                         defaultValue={this.state.perPage}
                                         onChange={(e) => { this.handlePerPage(parseInt(e.target.value, 10), false);}}
+                                        value={this.state.perPage}
                                     />
                                 </InputGroup>
                             </Form>
@@ -165,6 +202,7 @@ class ForecastList extends Component {
                                         aria-describedby="basic-addon2"
                                         defaultValue={this.state.page}
                                         onChange={this.handlePage}
+                                        value={this.state.page}
                                     />
                                     <InputGroup.Append>
                                         <Button onClick={this.handlePaginatePrev} variant="outline-primary">Prev</Button>

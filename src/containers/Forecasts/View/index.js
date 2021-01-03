@@ -26,6 +26,7 @@ class ForecastView extends Component {
             costs: {
                 data: [],
             },
+            forecast: {}
         };
         this.handlePerPage = this.handlePerPage.bind(this);
         this.handlePage = this.handlePage.bind(this);
@@ -36,7 +37,7 @@ class ForecastView extends Component {
     handlePerPage(value, search = true) {
         this.setState({ perPage: value }, () => {
             if (search) {
-                this.viewForecast();
+                this.getCosts();
             }
         });
     }
@@ -47,32 +48,40 @@ class ForecastView extends Component {
 
     handlePaginatePrev(event) {
         if (this.state.page > 1) {
-            this.setState({ page: parseInt(this.state.page, 10) - 1 }, () => { this.viewForecast(); });
+            this.setState({ page: parseInt(this.state.page, 10) - 1 }, () => { this.getCosts(); });
         }
     }
 
     handlePaginateNext(event) {
         const nextPage = parseInt(this.state.page, 10) + 1;
         if (nextPage <= this.state.costs.last_page) {
-            this.setState({ page: nextPage }, () => { this.viewForecast(); });
+            this.setState({ page: nextPage }, () => { this.getCosts(); });
         }
     }
 
     handlePaginate(event) {
-        this.viewForecast();
+        this.getCosts();
         event.preventDefault();
     }
 
     async componentDidMount() {
-        await this.viewForecast();
+        await this.getForecast();
+        await this.getCosts();
     }
 
-    async viewForecast() {
+    async getCosts() {
         const paginationQuery = `page=${this.state.page}&per_page=${this.state.perPage}`;
         const url = `http://localhost/api/v1/forecasts/${this.state.id}/costs?${paginationQuery}`;
         const response = await fetch(url);
         const data = await response.json();
         this.setState({ costs: data });
+    }
+
+    async getForecast() {
+        const url = `http://localhost/api/v1/forecasts/${this.state.id}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        this.setState({ forecast: data.data });
     }
 
     render() {
@@ -82,20 +91,20 @@ class ForecastView extends Component {
                     <Row>
                         <Col md={{ span: 8, offset: 2 }}>
                             <center>
-                                <h1>Estimated costs for: forecast1</h1>
+                                <h1>{this.state.forecast.name} estimated costs per Month</h1>
                             </center>
                         </Col>
                     </Row>
                     <Row>
                         <Col md={{ span: 8, offset: 2 }}>
                             <center>
-                                <Button variant="primary" as={NavLink} to="/">Back to Main</Button>
+                                <Button variant="primary" as={NavLink} to="/">&larr; Back to Main</Button>
                             </center>
                             <br />
                         </Col>
                     </Row>
                     <Row>
-                        <Col md={{ span: 10, offset: 1 }}>
+                        <Col md={{ span: 12 }}>
                             <Table bordered hover>
                                 <thead>
                                     <tr>
@@ -144,6 +153,7 @@ class ForecastView extends Component {
                                         aria-describedby="basic-addon1"
                                         defaultValue={this.state.perPage}
                                         onChange={(e) => { this.handlePerPage(parseInt(e.target.value, 10), false); }}
+                                        value={this.state.perPage}
                                     />
                                 </InputGroup>
                             </Form>
@@ -157,6 +167,7 @@ class ForecastView extends Component {
                                         aria-describedby="basic-addon2"
                                         defaultValue={this.state.page}
                                         onChange={this.handlePage}
+                                        value={this.state.page}
                                     />
                                     <InputGroup.Append>
                                         <Button onClick={this.handlePaginatePrev} variant="outline-primary">Prev</Button>

@@ -49,7 +49,7 @@ class ForecastCreate extends Component {
     }
 
     handleFormChange(event) {
-        this.state[event.target.id] = event.target.value;
+        this.setState({ [event.target.id]: event.target.value});
     }
 
     render() {
