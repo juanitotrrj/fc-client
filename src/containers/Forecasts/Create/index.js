@@ -23,7 +23,7 @@ class ForecastCreate extends Component {
 
     async createForecast(event) {
         event.preventDefault();
-        const url = `http://localhost/api/v1/forecasts`;
+        const url = `${process.env.REACT_APP_FC_API_URI}/api/v1/forecasts`;
 
         await fetch(url, {
             method: 'POST',

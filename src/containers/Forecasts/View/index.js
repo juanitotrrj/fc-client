@@ -71,14 +71,14 @@ class ForecastView extends Component {
 
     async getCosts() {
         const paginationQuery = `page=${this.state.page}&per_page=${this.state.perPage}`;
-        const url = `http://localhost/api/v1/forecasts/${this.state.id}/costs?${paginationQuery}`;
+        const url = `${process.env.REACT_APP_FC_API_URI}/api/v1/forecasts/${this.state.id}/costs?${paginationQuery}`;
         const response = await fetch(url);
         const data = await response.json();
         this.setState({ costs: data });
     }
 
     async getForecast() {
-        const url = `http://localhost/api/v1/forecasts/${this.state.id}`;
+        const url = `${process.env.REACT_APP_FC_API_URI}/api/v1/forecasts/${this.state.id}`;
         const response = await fetch(url);
         const data = await response.json();
         this.setState({ forecast: data.data });

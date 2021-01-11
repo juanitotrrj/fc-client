@@ -24,7 +24,7 @@ class ForecastUpdate extends Component {
 
     async updateForecast(event) {
         event.preventDefault();
-        const url = `http://localhost/api/v1/forecasts/${this.state.id}`;
+        const url = `${process.env.REACT_APP_FC_API_URI}/api/v1/forecasts/${this.state.id}`;
 
         await fetch(url, {
             method: 'PUT',
@@ -51,7 +51,7 @@ class ForecastUpdate extends Component {
 
     async getForecast(callback = null) {
         console.log(this.state);
-        const url = `http://localhost/api/v1/forecasts/${this.state.id}`;
+        const url = `${process.env.REACT_APP_FC_API_URI}/api/v1/forecasts/${this.state.id}`;
         const response = await fetch(url);
         const data = await response.json();
         this.setState({
